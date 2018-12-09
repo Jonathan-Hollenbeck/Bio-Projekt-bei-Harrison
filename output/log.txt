@@ -1,0 +1,7 @@
+2018-12-09 11:57:30:
+	Changed ID	>rna0_11
+		to	>gene1
+2018-12-09 11:57:30:
+	Changed ID	>rna0_7
+		to	>gene2
+New filename for input_files/human_2.fa is output/human_2_output.fa
