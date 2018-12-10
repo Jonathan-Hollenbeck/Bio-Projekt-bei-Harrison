@@ -1,18 +1,21 @@
 import time
 import datetime
 import argparse
+from difflib import SequenceMatcher
 
 parser = argparse.ArgumentParser()
 parser.add_argument("fasta1")
 parser.add_argument("fasta2")
 parser.add_argument("queries")
 parser.add_argument("output")
+parser.add_argument("threshold")
 args = parser.parse_args()
 
 fasta1 = "input_files/" + args.fasta1
 fasta2 = "input_files/" + args.fasta2
 queries = "input_files/" + args.queries
 output = "output/" + args.output
+threshold = float(args.threshold)
 
 try:
     f1 = open(fasta1, "r")
@@ -32,6 +35,10 @@ f1_dict = {}
 f2_dict = {}
 keys1 = ""
 keys2 = ""
+
+def similar(seq1, seq2):
+    # Checks the similarity of two given strings and returns it ratio
+    return SequenceMatcher(None, seq1, seq2).ratio()
 
 def parseToDict(file):
     fileDict = {}
@@ -63,20 +70,36 @@ def checkAndRenameID(dict1, dict2, id):
     if len(f1_dict.values()) >= len(f2_dict.values()):
         # iterate through all items of dictionary 2 (file2)
         for y in list(f2_dict):
+            # saves the similarity between sequence1 and sequence2
+            similarity = similar(f1_dict[inputID], f2_dict[y])
             if f1_dict[inputID] == f2_dict[y]:
                 print(inputID)
                 print(y)
                 temp_dict.update({inputID: f2_dict[y]})
                 logToOutput(y, inputID)
+            elif similarity >= threshold:
+                print(inputID)
+                print(y)
+                print(threshold)
+                temp_dict.update({inputID: f2_dict[y]})
+                logToOutput(y, inputID + " has similarity of: " + str(similarity))
             else:
                 temp_dict.update({y: f2_dict[y]})
     else:
         for x in list(f2_dict):
+            # saves the similarity between sequence1 and sequence2
+            similarity = similar(f1_dict[inputID], f2_dict[x])
             if f2_dict[x] == f1_dict[inputID]:
                 print(inputID)
                 print(x)
                 temp_dict.update({inputID: f2_dict[x]})
                 logToOutput(x, inputID)
+            elif similarity >= threshold:
+                print(inputID)
+                print(x)
+                print(threshold)
+                temp_dict.update({inputID: f2_dict[x]})
+                logToOutput(x, inputID + " has similarity of: " + str(similarity))
             else:
                 temp_dict.update({x: f2_dict[x]})
     return temp_dict
@@ -86,7 +109,7 @@ def writeToOutput(dict):
         lo = open("output/log.txt", "a")
     except IOError:
         print("An error occured trying to append to log.txt")
-    lo.write("New filename for " + fasta2 + " is " +  output + "\n")
+    lo.write("Chosen threshold was: " + str(threshold) + "\n" + "New filename for " + fasta2 + " is " + output + "\n")
     lo.close()
     try:
         fo = open(output, "w")
