@@ -1,3 +1,5 @@
 
 # Ignore the whole .idea folder from PyCharm 
 .idea/*
+output/*.fa
+output/*.txt
