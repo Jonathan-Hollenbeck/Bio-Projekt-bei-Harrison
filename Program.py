@@ -31,10 +31,41 @@ except IOError:
     print("An error occured trying to read queries.txt")
 
 # Declaring and initialising some dictionaries and key variables
+f1copy = f1
 f1_dict = {}
 f2_dict = {}
 keys1 = ""
 keys2 = ""
+
+def checkFastaFormat():
+    inGeneID = 0
+    inSequence = 0
+    try:
+        f1copy = open(fasta1, "r")
+    except IOError:
+        print("An error occured trying to read file 1")
+    for line in f1copy:
+        justText = line.split("\n")
+        if inGeneID == 0 and justText[0].startswith(">"):
+            inGeneID = 1
+        elif inGeneID == 1:
+            if not justText[0].isalpha():
+                print("Error occured: Given Sequence contains other symbols")
+                exit(1)
+            inGeneID = 0
+            inSequence = 1
+        elif inSequence == 1 and justText[0].startswith(">"):
+            inSequence = 0
+            inGeneID = 1
+        elif inSequence == 1:
+            inSequence = 1
+            if not justText[0].isalpha():
+                print("Error occured: Given Sequence contains other symbols")
+                exit(1)
+        else:
+            print("Error occured: Given file is not in fasta format.")
+            exit(1)
+
 
 def similar(seq1, seq2):
     # Checks the similarity of two given strings and returns it ratio
@@ -56,7 +87,7 @@ def parseToDict(file):
             values.append(items[0])
             str = ''.join(values)
             fileDict[keys] = str
-    file.close()
+    #file.close()
     return fileDict
 
 def checkAndRenameID(dict1, dict2, id):
@@ -135,6 +166,9 @@ def logToOutput(oldId, newId):
     st = datetime.datetime.fromtimestamp(ts).strftime('%Y-%m-%d %H:%M:%S')
     lo.write(st + ":\n" + "\tChanged ID\t" + oldId + "\n\t\tto\t" + newId + "\n")
     lo.close()
+
+
+checkFastaFormat()
 
 f1_dict = parseToDict(f1)
 f2_dict = parseToDict(f2)
