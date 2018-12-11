@@ -14,7 +14,10 @@ args = parser.parse_args()
 fasta1 = "input_files/" + args.fasta1
 fasta2 = "input_files/" + args.fasta2
 queries = "input_files/" + args.queries
-output = "output/" + args.output
+if args.output == "":
+    output = "output/" + args.fasta2[:-3] + "_output.fa"
+else:
+    output = args.output
 threshold = float(args.threshold)
 
 try:
@@ -49,7 +52,6 @@ def checkFastaFormat():
         print("An error occured trying to read file 1")
     for line in f1copy:
         justText = line.split("\n")
-        print(justText[0])
         if inGeneID == 0 and justText[0].startswith(">"):
             inGeneID = 1
         elif inGeneID == 1:
@@ -76,7 +78,6 @@ def checkFastaFormat():
         print("An error occured trying to read file 1")
     for line in f2copy:
         justText = line.split("\n")
-        print(justText[0])
         if inGeneID == 0 and justText[0].startswith(">"):
             inGeneID = 1
         elif inGeneID == 1:
