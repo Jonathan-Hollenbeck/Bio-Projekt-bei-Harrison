@@ -36,6 +36,10 @@ f2_dict = {}
 keys1 = ""
 keys2 = ""
 
+# Timestamp for execution
+ts = time.time()
+st = datetime.datetime.fromtimestamp(ts).strftime('%Y-%m-%d %H:%M:%S')
+
 def checkFastaFormat():
     inGeneID = 0
     inSequence = 0
@@ -45,6 +49,7 @@ def checkFastaFormat():
         print("An error occured trying to read file 1")
     for line in f1copy:
         justText = line.split("\n")
+        print(justText[0])
         if inGeneID == 0 and justText[0].startswith(">"):
             inGeneID = 1
         elif inGeneID == 1:
@@ -65,31 +70,32 @@ def checkFastaFormat():
             print("Error occured: Given file is not in fasta format.")
             exit(1)
 
-        try:
-            f2copy = open(fasta2, "r")
-        except IOError:
-            print("An error occured trying to read file 1")
-        for line in f2copy:
-            justText = line.split("\n")
-            if inGeneID == 0 and justText[0].startswith(">"):
-                inGeneID = 1
-            elif inGeneID == 1:
-                if not justText[0].isalpha():
-                    print("Error occured: Given Sequence contains other symbols")
-                    exit(1)
-                inGeneID = 0
-                inSequence = 1
-            elif inSequence == 1 and justText[0].startswith(">"):
-                inSequence = 0
-                inGeneID = 1
-            elif inSequence == 1:
-                inSequence = 1
-                if not justText[0].isalpha():
-                    print("Error occured: Given Sequence contains other symbols")
-                    exit(1)
-            else:
-                print("Error occured: Given file is not in fasta format.")
+    try:
+        f2copy = open(fasta2, "r")
+    except IOError:
+        print("An error occured trying to read file 1")
+    for line in f2copy:
+        justText = line.split("\n")
+        print(justText[0])
+        if inGeneID == 0 and justText[0].startswith(">"):
+            inGeneID = 1
+        elif inGeneID == 1:
+            if not justText[0].isalpha():
+                print("Error occured: Given Sequence contains other symbols")
                 exit(1)
+            inGeneID = 0
+            inSequence = 1
+        elif inSequence == 1 and justText[0].startswith(">"):
+            inSequence = 0
+            inGeneID = 1
+        elif inSequence == 1:
+            inSequence = 1
+            if not justText[0].isalpha():
+                print("Error occured: Given Sequence contains other symbols")
+                exit(1)
+        else:
+            print("Error occured: Given file is not in fasta format.")
+            exit(1)
 
 
 def similar(seq1, seq2):
@@ -162,7 +168,7 @@ def checkAndRenameID(dict1, dict2, id):
 
 def writeToOutput(dict):
     try:
-        lo = open("output/log.txt", "a")
+        lo = open("logs/log_" + st + ".txt", "a")
     except IOError:
         print("An error occured trying to append to log.txt")
     lo.write("Chosen threshold was: " + str(threshold) + "\n" + "New filename for " + fasta2 + " is " + output + "\n")
@@ -184,12 +190,10 @@ def writeToOutput(dict):
 
 def logToOutput(oldId, newId):
     try:
-        lo = open("output/log.txt", "a")
+        lo = open("logs/log_" + st + ".txt", "a")
     except IOError:
         print("An error occured trying to append to log.txt")
-    ts = time.time()
-    st = datetime.datetime.fromtimestamp(ts).strftime('%Y-%m-%d %H:%M:%S')
-    lo.write(st + ":\n" + "\tChanged ID\t" + oldId + "\n\t\tto\t" + newId + "\n")
+    lo.write("\n" + "\tChanged ID\t" + oldId + "\n\t\tto\t" + newId + "\n")
     lo.close()
 
 
