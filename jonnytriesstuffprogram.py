@@ -3,6 +3,7 @@ import datetime
 import argparse
 from difflib import SequenceMatcher
 
+#constructor for making the sequenz of code clear
 def constructor():
     parser = argparse.ArgumentParser()
     parser.add_argument("fasta1")
@@ -11,6 +12,24 @@ def constructor():
     parser.add_argument("output")
     parser.add_argument("threshold")
     args = parser.parse_args()
+
+    #referenz all global variables used in this function
+    global fasta1
+    global fasta2
+    global queries
+    global queryIDs
+    global output
+    global threshold
+    global f1copy
+    global f2copy
+    global f1
+    global f2
+    global f1_dict
+    global f2_dict
+    global keys1
+    global keys2
+    global ts
+    global st
 
     fasta1 = "input_files/" + args.fasta1
     fasta2 = "input_files/" + args.fasta2
@@ -33,6 +52,7 @@ def constructor():
 
     #open needed filestreams
     f1copy = openFile(fasta1)
+    f2copy = openFile(fasta2)
     f1 = openFile(fasta1)
     f2 = openFile(fasta2)
 
@@ -49,9 +69,10 @@ def constructor():
 #function to open a filestream. returns filestream
 def openFile(file):
     try:
-        return open(fasta1, "r")
+        return open(file, "r")
     except IOError:
         print("An error occured trying to read " + file)
+
 #checks if the given file is a fasta or not
 def checkFastaFormat():
     inGeneID = 0
@@ -178,9 +199,10 @@ def checkAndRenameID(dict1, dict2, id):
 def writeToOutput(dict):
     #write in logfile
     try:
-        lo = open("logs/log_" + st + ".txt", "a")
+        lo = open("logs/log_" + st + ".txt", "a+")
     except IOError:
         print("An error occured trying to append to log_" + st + ".txt")
+    print(lo)
     lo.write("Chosen threshold was: " + str(threshold) + "\n" + "New filename for " + fasta2 + " is " + output + "\n")
     lo.close()
     #write in outputfile
@@ -204,7 +226,7 @@ def logToOutput(oldId, newId):
     try:
         lo = open("logs/log_" + st + ".txt", "a")
     except IOError:
-        print("An error occured trying to append to log.txt")
+        print("An error occured trying to append to log_" + st + ".txt")
     lo.write("\n" + "\tChanged ID\t" + oldId + "\n\t\tto\t" + newId + "\n")
     lo.close()
 
