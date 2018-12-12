@@ -3,45 +3,56 @@ import datetime
 import argparse
 from difflib import SequenceMatcher
 
-parser = argparse.ArgumentParser()
-parser.add_argument("fasta1")
-parser.add_argument("fasta2")
-parser.add_argument("queries")
-parser.add_argument("output")
-parser.add_argument("threshold")
-args = parser.parse_args()
+def constructor():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("fasta1")
+    parser.add_argument("fasta2")
+    parser.add_argument("queries")
+    parser.add_argument("output")
+    parser.add_argument("threshold")
+    args = parser.parse_args()
 
-fasta1 = "input_files/" + args.fasta1
-fasta2 = "input_files/" + args.fasta2
-queries = "input_files/" + args.queries
-if args.output == "":
-    output = "output/" + args.fasta2[:-3] + "_output.fa"
-else:
-    output = args.output
-threshold = float(args.threshold)
+    fasta1 = "input_files/" + args.fasta1
+    fasta2 = "input_files/" + args.fasta2
 
+    #manage queries arg
+    if args.queries[-4:] == ".txt":
+        queries = "input_files/" + args.queries
+        queries = openFile(queries)
+        queryIDs = parseToDict(queries).keys()
+    else:
+        queryIDs = {args.queries: ""}
+
+    #manage output arg
+    if args.output == "":
+        output = "output/" + args.fasta2[:-3] + "_output.fa"
+    else:
+        output = args.output
+    threshold = float(args.threshold)
+
+
+    #open needed filestreams
+    f1copy = openFile(fasta1)
+    f1 = openFile(fasta1)
+    f2 = openFile(fasta2)
+
+    # Declaring and initialising some dictionaries and key variables
+    f1_dict = {}
+    f2_dict = {}
+    keys1 = ""
+    keys2 = ""
+
+    # Timestamp for execution
+    ts = time.time()
+    st = datetime.datetime.fromtimestamp(ts).strftime('%Y-%m-%d %H:%M:%S')
+
+#function to open a filestream. returns filestream
 def openFile(file):
     try:
         return open(fasta1, "r")
     except IOError:
         print("An error occured trying to read " + file)
-
-#open all needed filestreams
-f1copy = openFile(fasta1)
-f1 = openFile(fasta1)
-f2 = openFile(fasta2)
-queries = openFile(queries)
-
-# Declaring and initialising some dictionaries and key variables
-f1_dict = {}
-f2_dict = {}
-keys1 = ""
-keys2 = ""
-
-# Timestamp for execution
-ts = time.time()
-st = datetime.datetime.fromtimestamp(ts).strftime('%Y-%m-%d %H:%M:%S')
-
+#checks if the given file is a fasta or not
 def checkFastaFormat():
     inGeneID = 0
     inSequence = 0
@@ -93,14 +104,16 @@ def checkFastaFormat():
             print("Error occured: Given file is not in fasta format.")
             exit(1)
 
-
+# Checks the similarity of two given strings and returns it ratio
 def similar(seq1, seq2):
-    # Checks the similarity of two given strings and returns it ratio
     return SequenceMatcher(None, seq1, seq2).ratio()
 
+#parses the content from a file into a dictionary
 def parseToDict(file):
     fileDict = {}
     keys = ""
+    values = []
+    items = ""
     # Reads the first input file line by line and distincts between >ID and Values
     # and writes the >IDs as keys and the Values as values in a dictionary
     for line in file:
@@ -114,11 +127,11 @@ def parseToDict(file):
             values.append(items[0])
             str = ''.join(values)
             fileDict[keys] = str
-    #file.close()
+    file.close()
     return fileDict
 
+# rewrite ID of same sequences in the second input file
 def checkAndRenameID(dict1, dict2, id):
-    # rewrite ID of same sequences in the second input file
     f1_dict = dict1
     f2_dict = dict2
     inputID = id
@@ -163,16 +176,18 @@ def checkAndRenameID(dict1, dict2, id):
     return temp_dict
 
 def writeToOutput(dict):
+    #write in logfile
     try:
         lo = open("logs/log_" + st + ".txt", "a")
     except IOError:
-        print("An error occured trying to append to log.txt")
+        print("An error occured trying to append to log_" + st + ".txt")
     lo.write("Chosen threshold was: " + str(threshold) + "\n" + "New filename for " + fasta2 + " is " + output + "\n")
     lo.close()
+    #write in outputfile
     try:
         fo = open(output, "w")
     except IOError:
-        print("An error occured trying to write to file")
+        print("An error occured trying to write to " + output)
     for x in dict:
         line = dict[x]
         n = 60
@@ -184,6 +199,7 @@ def writeToOutput(dict):
             fo.write("\n")
     fo.close()
 
+#writes changes that were made into the logfile
 def logToOutput(oldId, newId):
     try:
         lo = open("logs/log_" + st + ".txt", "a")
@@ -192,13 +208,12 @@ def logToOutput(oldId, newId):
     lo.write("\n" + "\tChanged ID\t" + oldId + "\n\t\tto\t" + newId + "\n")
     lo.close()
 
+constructor()
 
 checkFastaFormat()
 
 f1_dict = parseToDict(f1)
 f2_dict = parseToDict(f2)
-
-queryIDs = parseToDict(queries).keys()
 
 for ID in queryIDs:
     f2_dict = checkAndRenameID(f1_dict, f2_dict, ID)
