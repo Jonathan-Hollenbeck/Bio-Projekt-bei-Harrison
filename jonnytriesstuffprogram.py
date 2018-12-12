@@ -4,7 +4,8 @@ import argparse
 from difflib import SequenceMatcher
 
 #constructor for making the sequenz of code clear
-def constructor():
+def settingup():
+    #read in args
     parser = argparse.ArgumentParser()
     parser.add_argument("fasta1")
     parser.add_argument("fasta2")
@@ -204,8 +205,7 @@ def logToOutput(oldId, newId):
     except IOError:
         print("An error occured trying to append to log_" + st + ".txt")
 
-
-constructor()
+settingup()
 
 checkFastaFormat(f1copy)
 checkFastaFormat(f2copy)
