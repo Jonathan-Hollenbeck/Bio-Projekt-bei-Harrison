@@ -74,10 +74,10 @@ def openFile(file):
         print("An error occured trying to read " + file)
 
 #checks if the given file is a fasta or not
-def checkFastaFormat():
+def checkFastaFormat(file):
     inGeneID = 0
     inSequence = 0
-    for line in f1copy:
+    for line in file:
         justText = line.split("\n")
         if inGeneID == 0 and justText[0].startswith(">"):
             inGeneID = 1
@@ -232,7 +232,8 @@ def logToOutput(oldId, newId):
 
 constructor()
 
-checkFastaFormat()
+checkFastaFormat(f1copy)
+checkFastaFormat(f2copy)
 
 f1_dict = parseToDict(f1)
 f2_dict = parseToDict(f2)
