@@ -41,7 +41,7 @@ keys2 = ""
 
 # Timestamp for execution
 ts = time.time()
-st = datetime.datetime.fromtimestamp(ts).strftime('%Y-%m-%d %H:%M:%S')
+st = datetime.datetime.fromtimestamp(ts).strftime('%Y-%m-%d %H-%M-%S')
 
 def checkFastaFormat():
     inGeneID = 0
