@@ -3,4 +3,5 @@
 .idea/*
 output/*.fa
 output/*.txt
+output/*.csv
 logs/*.txt

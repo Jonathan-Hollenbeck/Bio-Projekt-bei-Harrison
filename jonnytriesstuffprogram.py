@@ -47,7 +47,7 @@ def settingup():
     if args.output == "":
         output = "output/" + args.fasta2[:-3] + "_output.fa"
     else:
-        output = args.output
+        output = "output/" + args.output
     threshold = float(args.threshold)
 
 
@@ -66,6 +66,15 @@ def settingup():
     # Timestamp for execution
     ts = time.time()
     st = datetime.datetime.fromtimestamp(ts).strftime('%Y-%m-%d %H-%M-%S')
+
+
+    #reset output csv file
+    try:
+        co = open(output[:len(output)-3] + "_csv.csv", "w+")
+        co.write("oldId,newId,similarity\n")
+        co.close()
+    except IOError:
+        print("An error occured trying to append to " + output[:len(output)-3] + "_csv.csv")
 
 #function to open a filestream. returns filestream
 def openFile(file):
@@ -167,14 +176,16 @@ def checkAndRenameID(dict1, dict2, id):
                 print(threshold)
                 temp_dict.update({inputID: f2_dict[x]})
                 logToOutput(x, inputID + " has similarity of: " + str(similarity))
+                logToCSVOutput(x, inputID, str(round((100*similarity),2)) + "%")
             else:
                 temp_dict.update({x: f2_dict[x]})
     return temp_dict
 
+#writes content in the output directory
 def writeToOutput(dict):
     #write in logfile
     try:
-        lo = open("logs/log_" + st + ".txt", "a")
+        lo = open("logs/log_" + st + ".txt", "a+")
         lo.write("Chosen threshold was: " + str(threshold) + "\n" + "New filename for " + fasta2 + " is " + output + "\n")
         lo.close()
     except IOError:
@@ -182,7 +193,7 @@ def writeToOutput(dict):
 
     #write in outputfile
     try:
-        fo = open(output, "a+")
+        fo = open(output, "w+")
         for x in dict:
             line = dict[x]
             n = 60
@@ -195,6 +206,15 @@ def writeToOutput(dict):
         fo.close()
     except IOError:
         print("An error occured trying to write to " + output)
+
+#write csvfile
+def logToCSVOutput(oldId, newId, similarity):
+    try:
+        co = open(output[:len(output)-3] + "_csv.csv", "a+")
+        co.write(oldId + "," + newId + "," + similarity + "\n")
+        co.close()
+    except IOError:
+        print("An error occured trying to append to " + output[:len(output)-3] + "_csv.csv")
 
 #writes changes that were made into the logfile
 def logToOutput(oldId, newId):
