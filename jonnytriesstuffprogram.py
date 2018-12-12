@@ -35,21 +35,12 @@ def settingup():
     fasta1 = "input_files/" + args.fasta1
     fasta2 = "input_files/" + args.fasta2
 
-    #manage queries arg
-    if args.queries[-4:] == ".txt":
-        queries = "input_files/" + args.queries
-        queries = openFile(queries)
-        queryIDs = parseToDict(queries).keys()
-    else:
-        queryIDs = {args.queries: ""}
-
     #manage output arg
     if args.output == "":
         output = "output/" + args.fasta2[:-3] + "_output.fa"
     else:
         output = "output/" + args.output
     threshold = float(args.threshold)
-
 
     #open needed filestreams
     f1copy = openFile(fasta1)
@@ -67,7 +58,6 @@ def settingup():
     ts = time.time()
     st = datetime.datetime.fromtimestamp(ts).strftime('%Y-%m-%d %H-%M-%S')
 
-
     #reset output csv file
     try:
         co = open(output[:len(output)-3] + "_csv.csv", "w+")
@@ -75,6 +65,26 @@ def settingup():
         co.close()
     except IOError:
         print("An error occured trying to append to " + output[:len(output)-3] + "_csv.csv")
+
+    #check if files are in fasta format
+    checkFastaFormat(f1copy)
+    checkFastaFormat(f2copy)
+
+    #parse content into dictionary with ids as keys and sequenz as value
+    f1_dict = parseToDict(f1)
+    f2_dict = parseToDict(f2)
+
+    #manage queries arg
+    if args.queries[-4:] == ".txt":
+        queries = "input_files/" + args.queries
+        queries = openFile(queries)
+        queryIDs = parseToDict(queries).keys()
+    elif args.queries == "all":
+        queryIDs = {}
+        for i in f1_dict.keys():
+            queryIDs[i] = ""
+    else:
+        queryIDs = {args.queries: ""}
 
 #function to open a filestream. returns filestream
 def openFile(file):
@@ -226,12 +236,6 @@ def logToOutput(oldId, newId):
         print("An error occured trying to append to log_" + st + ".txt")
 
 settingup()
-
-checkFastaFormat(f1copy)
-checkFastaFormat(f2copy)
-
-f1_dict = parseToDict(f1)
-f2_dict = parseToDict(f2)
 
 for ID in queryIDs:
     f2_dict = checkAndRenameID(f1_dict, f2_dict, ID)
