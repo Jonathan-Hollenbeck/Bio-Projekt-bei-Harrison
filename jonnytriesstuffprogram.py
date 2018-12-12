@@ -64,7 +64,7 @@ def constructor():
 
     # Timestamp for execution
     ts = time.time()
-    st = datetime.datetime.fromtimestamp(ts).strftime('%Y-%m-%d %H:%M:%S')
+    st = datetime.datetime.fromtimestamp(ts).strftime('%Y-%m-%d %H-%M-%S')
 
 #function to open a filestream. returns filestream
 def openFile(file):
@@ -199,27 +199,27 @@ def checkAndRenameID(dict1, dict2, id):
 def writeToOutput(dict):
     #write in logfile
     try:
-        lo = open("logs/log_" + st + ".txt", "a+")
+        lo = open("logs/log_" + st + ".txt", "w+")
+        lo.write("Chosen threshold was: " + str(threshold) + "\n" + "New filename for " + fasta2 + " is " + output + "\n")
+        lo.close()
     except IOError:
         print("An error occured trying to append to log_" + st + ".txt")
-    print(lo)
-    lo.write("Chosen threshold was: " + str(threshold) + "\n" + "New filename for " + fasta2 + " is " + output + "\n")
-    lo.close()
+
     #write in outputfile
     try:
         fo = open(output, "w")
+        for x in dict:
+            line = dict[x]
+            n = 60
+            newLine = [line[i:i + n] for i in range(0, len(line), n)]
+            fo.write(x)
+            fo.write("\n")
+            for l in newLine:
+                fo.write(l)
+                fo.write("\n")
+        fo.close()
     except IOError:
         print("An error occured trying to write to " + output)
-    for x in dict:
-        line = dict[x]
-        n = 60
-        newLine = [line[i:i + n] for i in range(0, len(line), n)]
-        fo.write(x)
-        fo.write("\n")
-        for l in newLine:
-            fo.write(l)
-            fo.write("\n")
-    fo.close()
 
 #writes changes that were made into the logfile
 def logToOutput(oldId, newId):
