@@ -1,4 +1,5 @@
 import argparse
+from difflib import SequenceMatcher
 
 #declaring Methods
 
@@ -35,7 +36,32 @@ def parseFileToList(stream):
         fastaList.append(line)
     return fastaList
 
-def checkFastaFormat(fileContentAsList, filename):
+#parsing the content of a fasta in a dictionary
+def parseToDict(stream):
+    fileDict = {}
+    keys = ""
+    values = []
+    items = ""
+    # Reads the first input file line by line and distincts between >ID and Values
+    # and writes the >IDs as keys and the Values as values in a dictionary
+    for line in stream:
+        if line.startswith(">"):
+            values = []
+            items = line.split("\n")
+            keys = items[0]
+            fileDict[keys] = values
+        else:
+            items = line.split("\n")
+            values.append(items[0])
+            str = ''.join(values)
+            fileDict[keys] = str
+    return fileDict
+
+#checking if file is in fasta format
+def checkFastaFormat(file):
+    fileStream = openFileStream("input_files/" + file)
+    fileContentAsList = parseFileToList(fileStream)
+    fileStream.close()
     inGeneID = False
     inSequence = False
     for line in fileContentAsList:
@@ -44,43 +70,52 @@ def checkFastaFormat(fileContentAsList, filename):
                 inGeneID = True
                 inSequence = False
             elif inGeneID == True and line.startswith(">"):
-                print("ERROR: " + filename + "is not in FASTA format, because there where 2 GenIDs in a row")
+                print("ERROR: " + file + "is not in FASTA format, because there where 2 GenIDs in a row")
                 exit(1)
             elif inGeneID == True:
                 if not line.isalpha():
-                    print("ERROR: " + filename + "is not in FASTA format, because of this line: " + line)
+                    print("ERROR: " + file + "is not in FASTA format, because of this line: " + line)
                     exit(1)
                 inGeneID = False
                 inSequence = True
             elif inSequence == True:
                 if not line.isalpha():
-                    print("ERROR: " + filename + "is not in FASTA format, because of this line: " + line)
+                    print("ERROR: " + file + "is not in FASTA format, because of this line: " + line)
                     exit(1)
             else:
-                print("ERROR: " + filename + "is not in FASTA format, because of this line: " + line)
+                print("ERROR: " + file + "is not in FASTA format, because of this line: " + line)
                 exit(1)
 
+# Checks the similarity of two given strings and returns it ratio
+def similar(seq1, seq2):
+    return SequenceMatcher(None, seq1, seq2).ratio()
 
-def compareFastas(fasta1ContentAsList, fasta2ContentAsList):
-    print("compareFastas")
+def compareFastasWithQueries(fasta1, fasta2, queries, threshold):
+    print("compareFastasWithQueries")
+    for query in queries:
+        for key in fasta2.keys():
+            similarity = similar(fasta1.get(query), fasta2.get(key))
+            print(query)
+            print(key)
+            print(similarity)
 
 #actually doing stuff now
 
 readInArguments();
 
+#checkingFastaFormat for original file
+checkFastaFormat(args.originalfasta)
+
 #reading in the original fasta file
 ogFastaStream = openFileStream("input_files/" + args.originalfasta)
-ogFasta = parseFileToList(ogFastaStream)
+ogFasta_dict = parseToDict(ogFastaStream)
 ogFastaStream.close()
 
-checkFastaFormat(ogFasta, "input_files/" + args.originalfasta)
-
-#putting all genes from originalfasta in queries
+#putting all genes from original fasta in queries
 if "all" in args.queries:
     args.queries = []
-    for line in ogFasta:
-        if line.startswith(">"):
-            args.queries.append(line)
+    for key in ogFasta_dict.keys():
+        args.queries.append(key.replace(">",""))
 #if queries.txt was in -q, put all genes from it in queries but no doubles
 elif "queries.txt" in args.queries:
     args.queries.remove("queries.txt")
@@ -91,10 +126,16 @@ elif "queries.txt" in args.queries:
         if query not in args.queries:
             args.queries.append(query)
 
-#looping throu all compare fastas
+#put > infront of every query
+args.queries = [">" + query for query in args.queries]
+
+#looping through all compare fastas
 for fasta in args.comparefastas:
+    checkFastaFormat(fasta)
+
+    #reading in the compare Fasta file
     cpFastaStream = openFileStream("input_files/" + fasta)
-    cpFasta = parseFileToList(cpFastaStream)
+    cpFasta_dict = parseToDict(cpFastaStream)
     cpFastaStream.close()
 
-    checkFastaFormat(cpFasta, "input_files/" + fasta)
+    compareFastasWithQueries(ogFasta_dict, cpFasta_dict, args.queries, args.threshold)
