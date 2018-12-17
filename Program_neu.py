@@ -87,17 +87,38 @@ def checkFastaFormat(file):
                 exit(1)
 
 # Checks the similarity of two given strings and returns it ratio
-def similar(seq1, seq2):
+def similarRatio(seq1, seq2):
     return SequenceMatcher(None, seq1, seq2).ratio()
 
+#Checks the difference of two given strings and returns it
+def similarAbsolute(seq1, seq2):
+    return sum(1 for a, b in zip(seq1, seq2) if a != b)
+
+#fasta[query] = fasta.pop(key)
+
 def compareFastasWithQueries(fasta1, fasta2, queries, threshold):
-    print("compareFastasWithQueries")
+    if threshold.endswith("%"):
+        threshold = float(threshold.replace("%", ""))
+        percent = True
+    else:
+        threshold = float(threshold)
+        percent = False
+    temp_dict = fasta2.copy()
+    alreadyReplaced = []
     for query in queries:
         for key in fasta2.keys():
-            similarity = similar(fasta1.get(query), fasta2.get(key))
-            print(query)
-            print(key)
-            print(similarity)
+            if percent == True:
+                similarity = similarRatio(fasta1.get(query), fasta2.get(key))
+                if similarity*100 >= threshold:
+                    if not key in alreadyReplaced:
+                        temp_dict[query] = temp_dict.pop(key)
+                        alreadyReplaced.append(key)
+            else:
+                difference = similarAbsolute(fasta1.get(query), fasta2.get(key))
+                if difference <= threshold:
+                    if not key in alreadyReplaced:
+                        temp_dict[query] = temp_dict.pop(key)
+                        alreadyReplaced.append(key)
 
 #actually doing stuff now
 
@@ -110,6 +131,8 @@ checkFastaFormat(args.originalfasta)
 ogFastaStream = openFileStream("input_files/" + args.originalfasta)
 ogFasta_dict = parseToDict(ogFastaStream)
 ogFastaStream.close()
+
+#handling queries
 
 #putting all genes from original fasta in queries
 if "all" in args.queries:
@@ -125,7 +148,6 @@ elif "queries.txt" in args.queries:
     for query in queries:
         if query not in args.queries:
             args.queries.append(query)
-
 #put > infront of every query
 args.queries = [">" + query for query in args.queries]
 
@@ -138,4 +160,6 @@ for fasta in args.comparefastas:
     cpFasta_dict = parseToDict(cpFastaStream)
     cpFastaStream.close()
 
+    print("starting to compare " + args.originalfasta + " and " + fasta + " with threshold " + args.threshold + "...")
     compareFastasWithQueries(ogFasta_dict, cpFasta_dict, args.queries, args.threshold)
+    print("comparison between " + args.originalfasta + " and " + fasta + " completed!")
