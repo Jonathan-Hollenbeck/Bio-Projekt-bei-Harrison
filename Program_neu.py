@@ -216,7 +216,6 @@ args.queries = [">" + query for query in args.queries]
 output_log = []
 output_csv = []
 
-
 #looping through all compare fastas
 for fasta in args.comparefastas:
     checkFastaFormat(fasta)
