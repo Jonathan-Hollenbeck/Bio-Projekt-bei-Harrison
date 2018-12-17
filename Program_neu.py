@@ -1,4 +1,7 @@
 import argparse
+import os
+import time
+import datetime
 from difflib import SequenceMatcher
 
 #declaring Methods
@@ -94,7 +97,62 @@ def similarRatio(seq1, seq2):
 def similarAbsolute(seq1, seq2):
     return sum(1 for a, b in zip(seq1, seq2) if a != b)
 
-#fasta[query] = fasta.pop(key)
+def appendToOutputs(query, key, simdiff):
+    #append to fasta
+    output_log.append("Changed ID " + key + " to " + query + "\n")
+    #append to csv
+    output_csv.append(key + "," + query + "," + str(simdiff) + "\n")
+
+def createFolder(directory):
+    try:
+        if not os.path.exists(directory):
+            os.makedirs(directory)
+    except OSError:
+        print ('ERROR: Creating directory. ' + directory)
+
+def writeInOutputs(fasta_dict, outputname):
+    #check if output and logs folder are there and create it if not
+    createFolder("./output/")
+    createFolder("./logs/")
+    #write the fasta file
+    try:
+        fo = open("./output/" + outputname.replace(".fa", "") + "_output.fa", "w+")
+        for key in fasta_dict.keys():
+            line = fasta_dict[key]
+            n = 60
+            newLine = [line[i:i + n] for i in range(0, len(line), n)]
+            fo.write(key)
+            fo.write("\n")
+            for l in newLine:
+                fo.write(l)
+                fo.write("\n")
+        fo.close()
+    except IOError:
+        print("An error occured trying to write to " + output)
+
+    #write in logfile
+    currentTimestamp = datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d %H-%M-%S')
+    try:
+        lo = open("./logs/log_" + currentTimestamp + "_" + outputname.replace(".fa", "") + ".txt", "w+")
+        for element in output_log:
+            lo.write(element)
+        lo.write("Chosen threshold was: " + args.threshold + "\n" + "New filename for " + outputname + " is " + outputname.replace(".fa", "") + "_output.fa" + "\n")
+        lo.close()
+    except IOError:
+        print("An error occured trying to append to log_" + currentTimestamp + ".txt")
+
+    #write in csv file
+    try:
+        co = open("./output/" + outputname.replace(".fa", "") + "_csv.csv", "w+")
+        if args.threshold.endswith("%"):
+            co.write("oldID,newID,similarity\n")
+        else:
+            co.write("oldID,newID,difference\n")
+        for element in output_csv:
+            co.write(element)
+        co.close()
+    except IOError:
+        print("An error occured trying to append to ./output/" + outputname.replace(".fa", "") + "_csv.csv")
 
 def compareFastasWithQueries(fasta1, fasta2, queries, threshold):
     if threshold.endswith("%"):
@@ -113,12 +171,15 @@ def compareFastasWithQueries(fasta1, fasta2, queries, threshold):
                     if not key in alreadyReplaced:
                         temp_dict[query] = temp_dict.pop(key)
                         alreadyReplaced.append(key)
+                        appendToOutputs(query, key, str(similarity*100) + "%")
             else:
                 difference = similarAbsolute(fasta1.get(query), fasta2.get(key))
                 if difference <= threshold:
                     if not key in alreadyReplaced:
                         temp_dict[query] = temp_dict.pop(key)
                         alreadyReplaced.append(key)
+                        appendToOutputs(query, key, difference)
+    return temp_dict
 
 #actually doing stuff now
 
@@ -151,6 +212,11 @@ elif "queries.txt" in args.queries:
 #put > infront of every query
 args.queries = [">" + query for query in args.queries]
 
+#variable for log output and csv output
+output_log = []
+output_csv = []
+
+
 #looping through all compare fastas
 for fasta in args.comparefastas:
     checkFastaFormat(fasta)
@@ -161,5 +227,8 @@ for fasta in args.comparefastas:
     cpFastaStream.close()
 
     print("starting to compare " + args.originalfasta + " and " + fasta + " with threshold " + args.threshold + "...")
-    compareFastasWithQueries(ogFasta_dict, cpFasta_dict, args.queries, args.threshold)
+    writeInOutputs(compareFastasWithQueries(ogFasta_dict, cpFasta_dict, args.queries, args.threshold), fasta)
     print("comparison between " + args.originalfasta + " and " + fasta + " completed!")
+
+    output_csv = []
+    output_log = []
