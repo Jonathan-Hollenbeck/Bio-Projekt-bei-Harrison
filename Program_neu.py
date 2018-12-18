@@ -97,6 +97,31 @@ def similarRatio(seq1, seq2):
 def similarAbsolute(seq1, seq2):
     return sum(1 for a, b in zip(seq1, seq2) if a != b)
 
+def compareFastasWithQueries(fasta1, fasta2, queries, threshold):
+    if str(threshold).endswith("%"):
+        threshold = float(threshold.replace("%", ""))
+        percent = True
+    else:
+        threshold = float(threshold)
+        percent = False
+    for query in queries:
+        for key in fasta2.keys():
+            if len(fasta1.get(query)) == len(fasta2.get(key)):
+                if percent == True:
+                    similarity = similarRatio(fasta1.get(query), fasta2.get(key))
+                    if similarity*100 >= threshold:
+                        appendToOutputs(query, key, str(similarity*100) + "%")
+                        appendToFAOutput(query, fasta2.get(key))
+                    else:
+                        appendToFAOutput(key, fasta2.get(key))
+                else:
+                    difference = similarAbsolute(fasta1.get(query), fasta2.get(key))
+                    if difference <= threshold:
+                        appendToOutputs(query, key, difference)
+                        appendToFAOutput(query, fasta2.get(key))
+                    else:
+                        appendToFAOutput(key, fasta2.get(key))
+
 def appendToOutputs(query, key, simdiff):
     #append to fasta
     output_log.append("Changed ID " + key + " to " + query + "\n")
@@ -159,31 +184,6 @@ def writeInOutputs(outputname):
         co.close()
     except IOError:
         print("An error occured trying to append to ./output/" + outputname.replace(".fa", "") + "_csv.csv")
-
-def compareFastasWithQueries(fasta1, fasta2, queries, threshold):
-    if str(threshold).endswith("%"):
-        threshold = float(threshold.replace("%", ""))
-        percent = True
-    else:
-        threshold = float(threshold)
-        percent = False
-    for query in queries:
-        for key in fasta2.keys():
-            if len(fasta1.get(query)) == len(fasta2.get(key)):
-                if percent == True:
-                    similarity = similarRatio(fasta1.get(query), fasta2.get(key))
-                    if similarity*100 >= threshold:
-                        appendToOutputs(query, key, str(similarity*100) + "%")
-                        appendToFAOutput(query, fasta2.get(key))
-                    else:
-                        appendToFAOutput(key, fasta2.get(key))
-                else:
-                    difference = similarAbsolute(fasta1.get(query), fasta2.get(key))
-                    if difference <= threshold:
-                        appendToOutputs(query, key, difference)
-                        appendToFAOutput(query, fasta2.get(key))
-                    else:
-                        appendToFAOutput(key, fasta2.get(key))
 
 #current time in milliseconds
 current_milli_time = lambda: int(round(time.time() * 1000))
