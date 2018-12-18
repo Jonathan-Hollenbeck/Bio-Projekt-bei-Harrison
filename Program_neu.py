@@ -134,6 +134,8 @@ def writeInOutputs(fasta_dict, outputname):
     currentTimestamp = datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d %H-%M-%S')
     try:
         lo = open("./logs/log_" + currentTimestamp + "_" + outputname.replace(".fa", "") + ".txt", "w+")
+        lo.write("Program call was:\n")
+        lo.write("python " + str(os.path.basename(__file__)) + str(args)[9:] + "\n")
         for element in output_log:
             lo.write(element)
         lo.write("Chosen threshold was: " + str(args.threshold) + "\n" + "New filename for " + outputname + " is " + outputname.replace(".fa", "") + "_output.fa" + "\n")
@@ -165,20 +167,21 @@ def compareFastasWithQueries(fasta1, fasta2, queries, threshold):
     alreadyReplaced = []
     for query in queries:
         for key in fasta2.keys():
-            if percent == True:
-                similarity = similarRatio(fasta1.get(query), fasta2.get(key))
-                if similarity*100 >= threshold:
-                    if not key in alreadyReplaced:
-                        temp_dict[query] = temp_dict.pop(key)
-                        alreadyReplaced.append(key)
-                        appendToOutputs(query, key, str(similarity*100) + "%")
-            else:
-                difference = similarAbsolute(fasta1.get(query), fasta2.get(key))
-                if difference <= threshold:
-                    if not key in alreadyReplaced:
-                        temp_dict[query] = temp_dict.pop(key)
-                        alreadyReplaced.append(key)
-                        appendToOutputs(query, key, difference)
+            if len(fasta1.get(query)) == len(fasta2.get(key)):
+                if percent == True:
+                    similarity = similarRatio(fasta1.get(query), fasta2.get(key))
+                    if similarity*100 >= threshold:
+                        if not key in alreadyReplaced:
+                            temp_dict[query] = temp_dict.pop(key)
+                            alreadyReplaced.append(key)
+                            appendToOutputs(query, key, str(similarity*100) + "%")
+                else:
+                    difference = similarAbsolute(fasta1.get(query), fasta2.get(key))
+                    if difference <= threshold:
+                        if not key in alreadyReplaced:
+                            temp_dict[query] = temp_dict.pop(key)
+                            alreadyReplaced.append(key)
+                            appendToOutputs(query, key, difference)
     return temp_dict
 
 #current time in milliseconds
@@ -226,6 +229,7 @@ if not args.queries:
 #variable for log output and csv output
 output_log = []
 output_csv = []
+output_fa = {}
 
 millisAll = current_milli_time()
 
@@ -240,11 +244,16 @@ for fasta in args.comparefastas:
     cpFastaStream.close()
 
     print("starting to compare " + args.originalfasta + " and " + fasta + " with threshold " + str(args.threshold) + "...")
-    writeInOutputs(compareFastasWithQueries(ogFasta_dict, cpFasta_dict, args.queries, args.threshold), fasta)
+    output_fa = compareFastasWithQueries(ogFasta_dict, cpFasta_dict, args.queries, args.threshold)
     print("comparison between " + args.originalfasta + " and " + fasta + " completed!")
+
+    print("writing output...")
+    writeInOutputs(output_fa, fasta)
+    print("finished writing output!\n")
 
     output_csv = []
     output_log = []
+    output_fa = {}
 
     print("Time needed for this comparision: " + str((current_milli_time() - millisFasta)) + " milliseconds\n")
 
