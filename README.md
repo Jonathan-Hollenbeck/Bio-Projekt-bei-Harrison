@@ -77,3 +77,14 @@ python Program_neu.py -ogf fasta_1.fa -cpf fasta_2.fa fasta_3.fa -t 2
 ```
 
 All optional parameters can be used in the same program call.
+
+### Resulting folder structure
+
+Right after the program call, you will find the folders logs and output.
+
+Inside the log folder is a resulting logfile with the timestamp of the program execution.
+The logfile contains the whole program call with all parameters, every ID change, the chosen (or default threshold)
+and the new fasta filename with the renamed sequences.
+
+Inside the output folder you will find a file for each compared fasta file named with the old fasta filename and an appended _output.fa.
+Additionally there is a corresponding _output_csv.csv with the old and new ID and their similarity.
