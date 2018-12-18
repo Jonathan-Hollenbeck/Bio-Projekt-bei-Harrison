@@ -134,6 +134,8 @@ def writeInOutputs(fasta_dict, outputname):
     currentTimestamp = datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d %H-%M-%S')
     try:
         lo = open("./logs/log_" + currentTimestamp + "_" + outputname.replace(".fa", "") + ".txt", "w+")
+        lo.write("Program call was:\n")
+        lo.write("python " + str(os.path.basename(__file__)) + str(args)[9:] + "\n")
         for element in output_log:
             lo.write(element)
         lo.write("Chosen threshold was: " + str(args.threshold) + "\n" + "New filename for " + outputname + " is " + outputname.replace(".fa", "") + "_output.fa" + "\n")
