@@ -56,6 +56,12 @@ It is also possible to make a program call for more than one specific ID:
 python Program_neu.py -ogf fasta_1.fa -cpf fasta_2.fa -q ID1234 ID5678
 ```
 
+If you wanna use IDs with the program and use the IDs in the queries.txt, you can just put queries.txt in there too:
+
+```
+python Program_neu.py -ogf fasta_1.fa -cpf fasta_2.fa -q ID1234 ID5678 queries.txt
+```
+
 If you would like to change the default threshold of 100% to i.e.: 98% then you can do a program call like:
 
 ```
