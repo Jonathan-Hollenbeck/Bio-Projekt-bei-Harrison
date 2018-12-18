@@ -128,7 +128,7 @@ def writeInOutputs(fasta_dict, outputname):
                 fo.write("\n")
         fo.close()
     except IOError:
-        print("An error occured trying to write to " + output)
+        print("An error occured trying to write to " + outputname)
 
     #write in logfile
     currentTimestamp = datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d %H-%M-%S')
