@@ -16,7 +16,7 @@ def readInArguments():
         help = "The fasta files you wanna compare to the original one.")
     parser.add_argument("--queries", "-q", nargs = "*", default = ["queries.txt"],
         help = "The genes you wanna compare. Either in the queries.txt or a list of specific genes without the >.")
-    parser.add_argument("--threshold", "-t", default = 0,
+    parser.add_argument("--threshold", "-t", default = "0",
         help="The threshold you wanna compare. Either a number with a percent symbole for percent calculation or a number for absolute calculation.")
 
     global args
@@ -136,7 +136,7 @@ def writeInOutputs(fasta_dict, outputname):
         lo = open("./logs/log_" + currentTimestamp + "_" + outputname.replace(".fa", "") + ".txt", "w+")
         for element in output_log:
             lo.write(element)
-        lo.write("Chosen threshold was: " + args.threshold + "\n" + "New filename for " + outputname + " is " + outputname.replace(".fa", "") + "_output.fa" + "\n")
+        lo.write("Chosen threshold was: " + str(args.threshold) + "\n" + "New filename for " + outputname + " is " + outputname.replace(".fa", "") + "_output.fa" + "\n")
         lo.close()
     except IOError:
         print("An error occured trying to append to log_" + currentTimestamp + ".txt")
@@ -144,7 +144,7 @@ def writeInOutputs(fasta_dict, outputname):
     #write in csv file
     try:
         co = open("./output/" + outputname.replace(".fa", "") + "_csv.csv", "w+")
-        if args.threshold.endswith("%"):
+        if str(args.threshold).endswith("%"):
             co.write("oldID,newID,similarity\n")
         else:
             co.write("oldID,newID,difference\n")
@@ -155,7 +155,7 @@ def writeInOutputs(fasta_dict, outputname):
         print("An error occured trying to append to ./output/" + outputname.replace(".fa", "") + "_csv.csv")
 
 def compareFastasWithQueries(fasta1, fasta2, queries, threshold):
-    if threshold.endswith("%"):
+    if str(threshold).endswith("%"):
         threshold = float(threshold.replace("%", ""))
         percent = True
     else:
@@ -180,6 +180,9 @@ def compareFastasWithQueries(fasta1, fasta2, queries, threshold):
                         alreadyReplaced.append(key)
                         appendToOutputs(query, key, difference)
     return temp_dict
+
+#current time in milliseconds
+current_milli_time = lambda: int(round(time.time() * 1000))
 
 #actually doing stuff now
 
@@ -211,13 +214,24 @@ elif "queries.txt" in args.queries:
             args.queries.append(query)
 #put > infront of every query
 args.queries = [">" + query for query in args.queries]
+#error message if some queries are not in original file
+for query in args.queries:
+    if not query in ogFasta_dict.keys():
+        print("ERROR: some or all queries are not in original File!")
+        exit(1)
+if not args.queries:
+    print("ERROR: query list is empty! maybe check queries.txt.")
+    exit(1)
 
 #variable for log output and csv output
 output_log = []
 output_csv = []
 
+millisAll = current_milli_time()
+
 #looping through all compare fastas
 for fasta in args.comparefastas:
+    millisFasta = current_milli_time()
     checkFastaFormat(fasta)
 
     #reading in the compare Fasta file
@@ -225,9 +239,13 @@ for fasta in args.comparefastas:
     cpFasta_dict = parseToDict(cpFastaStream)
     cpFastaStream.close()
 
-    print("starting to compare " + args.originalfasta + " and " + fasta + " with threshold " + args.threshold + "...")
+    print("starting to compare " + args.originalfasta + " and " + fasta + " with threshold " + str(args.threshold) + "...")
     writeInOutputs(compareFastasWithQueries(ogFasta_dict, cpFasta_dict, args.queries, args.threshold), fasta)
     print("comparison between " + args.originalfasta + " and " + fasta + " completed!")
 
     output_csv = []
     output_log = []
+
+    print("Time needed for this comparision: " + str((current_milli_time() - millisFasta)) + " milliseconds\n")
+
+print("Time needed for all comparisions: " + str((current_milli_time() - millisAll)) + " milliseconds")
