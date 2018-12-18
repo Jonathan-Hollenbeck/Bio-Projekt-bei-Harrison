@@ -1,7 +1,7 @@
 # Finding and renaming existing ids of equal or similar sequences
 
-Develop a tool that can be used to efficiently and accurately match transcript IDs between two or more transcriptomes. 
-The tool should take a list of transcripts, identify the same transcripts in another transcriptome and rename the transcripts so that they match the first set of IDs. 
+Develop a tool that can be used to efficiently and accurately match transcript IDs between two or more transcriptomes.
+The tool should take a list of transcripts, identify the same transcripts in another transcriptome and rename the transcripts so that they match the first set of IDs.
 
 ## Getting Started
 
@@ -21,7 +21,7 @@ python --version
 ### Usage
 
 To use the program, simply change to project directory (where Program.py exists) with the console or terminal and
-type 
+type
 
 ```
 python Program_neu.py --help
@@ -53,7 +53,7 @@ python Program_neu.py -ogf fasta_1.fa -cpf fasta_2.fa -q ID1234
 It is also possible to make a program call for more than one specific ID:
 
 ```
-python Program_neu.py -ogf fasta_1.fa -cpf fasta_2.fa -q "ID1234 ID5678"
+python Program_neu.py -ogf fasta_1.fa -cpf fasta_2.fa -q ID1234 ID5678
 ```
 
 If you would like to change the default threshold of 100% to i.e.: 98% then you can do a program call like:
