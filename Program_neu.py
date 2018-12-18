@@ -103,6 +103,11 @@ def appendToOutputs(query, key, simdiff):
     #append to csv
     output_csv.append(key + "," + query + "," + str(simdiff) + "\n")
 
+def appendToFAOutput(query, sequence):
+    #append query
+    output_fa.append(query)
+    output_fa.append(sequence)
+
 def createFolder(directory):
     try:
         if not os.path.exists(directory):
@@ -110,22 +115,21 @@ def createFolder(directory):
     except OSError:
         print ('ERROR: Creating directory. ' + directory)
 
-def writeInOutputs(fasta_dict, outputname):
+def writeInOutputs(outputname):
     #check if output and logs folder are there and create it if not
     createFolder("./output/")
     createFolder("./logs/")
     #write the fasta file
     try:
         fo = open("./output/" + outputname.replace(".fa", "") + "_output.fa", "w+")
-        for key in fasta_dict.keys():
-            line = fasta_dict[key]
-            n = 60
-            newLine = [line[i:i + n] for i in range(0, len(line), n)]
-            fo.write(key)
-            fo.write("\n")
-            for l in newLine:
-                fo.write(l)
-                fo.write("\n")
+        for line in output_fa:
+            if line.startswith(">") or line.startswith(";"):
+                fo.write(line + "\n")
+            else:
+                n = 60
+                parts = [line[i:i + n] for i in range(0, len(line), n)]
+                for part in parts:
+                    fo.write(part + "\n")
         fo.close()
     except IOError:
         print("An error occured trying to write to " + output)
@@ -163,26 +167,23 @@ def compareFastasWithQueries(fasta1, fasta2, queries, threshold):
     else:
         threshold = float(threshold)
         percent = False
-    temp_dict = fasta2.copy()
-    alreadyReplaced = []
     for query in queries:
         for key in fasta2.keys():
             if len(fasta1.get(query)) == len(fasta2.get(key)):
                 if percent == True:
                     similarity = similarRatio(fasta1.get(query), fasta2.get(key))
                     if similarity*100 >= threshold:
-                        if not key in alreadyReplaced:
-                            temp_dict[query] = temp_dict.pop(key)
-                            alreadyReplaced.append(key)
-                            appendToOutputs(query, key, str(similarity*100) + "%")
+                        appendToOutputs(query, key, str(similarity*100) + "%")
+                        appendToFAOutput(query, fasta2.get(key))
+                    else:
+                        appendToFAOutput(key, fasta2.get(key))
                 else:
                     difference = similarAbsolute(fasta1.get(query), fasta2.get(key))
                     if difference <= threshold:
-                        if not key in alreadyReplaced:
-                            temp_dict[query] = temp_dict.pop(key)
-                            alreadyReplaced.append(key)
-                            appendToOutputs(query, key, difference)
-    return temp_dict
+                        appendToOutputs(query, key, difference)
+                        appendToFAOutput(query, fasta2.get(key))
+                    else:
+                        appendToFAOutput(key, fasta2.get(key))
 
 #current time in milliseconds
 current_milli_time = lambda: int(round(time.time() * 1000))
@@ -229,7 +230,7 @@ if not args.queries:
 #variable for log output and csv output
 output_log = []
 output_csv = []
-output_fa = {}
+output_fa = []
 
 millisAll = current_milli_time()
 
@@ -244,16 +245,16 @@ for fasta in args.comparefastas:
     cpFastaStream.close()
 
     print("starting to compare " + args.originalfasta + " and " + fasta + " with threshold " + str(args.threshold) + "...")
-    output_fa = compareFastasWithQueries(ogFasta_dict, cpFasta_dict, args.queries, args.threshold)
+    compareFastasWithQueries(ogFasta_dict, cpFasta_dict, args.queries, args.threshold)
     print("comparison between " + args.originalfasta + " and " + fasta + " completed!")
 
     print("writing output...")
-    writeInOutputs(output_fa, fasta)
+    writeInOutputs(fasta)
     print("finished writing output!\n")
 
     output_csv = []
     output_log = []
-    output_fa = {}
+    output_fa = []
 
     print("Time needed for this comparision: " + str((current_milli_time() - millisFasta)) + " milliseconds\n")
 
