@@ -93,4 +93,4 @@ The logfile contains the whole program call with all parameters, every ID change
 and the new fasta filename with the renamed sequences.
 
 Inside the output folder you will find a file for each compared fasta file named with the old fasta filename and an appended _output.fa.
-Additionally there is a corresponding _output_csv.csv with the old and new ID and their similarity.
+Additionally there is a corresponding _output_csv.csv with the old and new ID and their similarity or difference, depending on the method used.
