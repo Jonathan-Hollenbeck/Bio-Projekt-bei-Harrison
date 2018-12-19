@@ -97,29 +97,58 @@ def similarRatio(seq1, seq2):
 def similarAbsolute(seq1, seq2):
     return sum(1 for a, b in zip(seq1, seq2) if a != b)
 
+#comparing the fasta files using the queries
 def compareFastasWithQueries(fasta1, fasta2, queries, threshold):
+    #comparing via percentage
     if str(threshold).endswith("%"):
+        #parsing threshold to float and without % sign
         threshold = float(threshold.replace("%", ""))
+        #looping through every query and every ID in compare fasta
         for query in queries:
             for key in fasta2.keys():
+                #if sequence length is equal, continue
                 if len(fasta1.get(query)) == len(fasta2.get(key)):
+                    #calculation the percentage similarity between the two sequences
                     similarity = similarRatio(fasta1.get(query), fasta2.get(key))
+                    #checking if threshold was exceeded
                     if similarity*100 >= threshold:
+                        #if was exceeded
+                        #append the renamed ID with the sequence to all the outputs
                         appendToOutputs(query, key, str(similarity*100) + "%")
                         appendToFAOutput(query, fasta2.get(key))
                     else:
+                        #if not
+                        #append the original ID and sequence to all the output
                         appendToFAOutput(key, fasta2.get(key))
+                else:
+                    #if sequence was not equaly long
+                    #append the original ID and sequence to the fasta output
+                    appendToFAOutput(key, fasta2.get(key))
+    #comparing via absolute value
     else:
+        #parsing the threshold to a float
         threshold = float(threshold)
+        #looping through every query and every ID in compare fasta
         for query in queries:
             for key in fasta2.keys():
+                #if sequence is equaly long, continue
                 if len(fasta1.get(query)) == len(fasta2.get(key)):
+                    #calculate the absolue difference between the two sequences
                     difference = similarAbsolute(fasta1.get(query), fasta2.get(key))
+                    #checking if threshold was exceeded
                     if difference <= threshold:
+                        #if not
+                        #append the renamed ID with the sequence to all the outputs
                         appendToOutputs(query, key, difference)
                         appendToFAOutput(query, fasta2.get(key))
                     else:
+                        #if was exceeded
+                        #append the original ID and sequence to all the output
                         appendToFAOutput(key, fasta2.get(key))
+                else:
+                    #if sequence was not equaly long
+                    #append the original ID and sequence to the fasta output
+                    appendToFAOutput(key, fasta2.get(key))
 
 def appendToOutputs(query, key, simdiff):
     #append to fasta
