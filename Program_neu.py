@@ -2,6 +2,7 @@ import argparse
 import os
 import time
 import datetime
+import re
 from difflib import SequenceMatcher
 
 #declaring Methods
@@ -10,6 +11,7 @@ from difflib import SequenceMatcher
 def readInArguments():
     parser = argparse.ArgumentParser()
 
+    #put in all the possible parameters
     parser.add_argument("--originalfasta", "-ogf",
         help = "The fasta file you wanna compare the others to.")
     parser.add_argument("--comparefastas", "-cpf", nargs = "+",
@@ -19,6 +21,7 @@ def readInArguments():
     parser.add_argument("--threshold", "-t", default = "0",
         help="The threshold you wanna compare. Either a number with a percent symbole for percent calculation or a number for absolute calculation.")
 
+    #make args global
     global args
 
     args = parser.parse_args()
@@ -34,8 +37,11 @@ def openFileStream(file):
 #parsing the content of a file into a list
 def parseFileToList(stream):
     fastaList = []
+    #looping through every line in the filestream
     for line in stream:
+        #deleting line breaks
         line = line.replace("\n", "")
+        #appending line
         fastaList.append(line)
     return fastaList
 
@@ -45,8 +51,8 @@ def parseToDict(stream):
     keys = ""
     values = []
     items = ""
-    # Reads the first input file line by line and distincts between >ID and Values
-    # and writes the >IDs as keys and the Values as values in a dictionary
+    #Reads the first input file line by line and distincts between >ID and Values
+    #and writes the >IDs as keys and the Values as values in a dictionary
     for line in stream:
         if line.startswith(">"):
             values = []
@@ -60,33 +66,47 @@ def parseToDict(stream):
             fileDict[keys] = str
     return fileDict
 
+#checking if given string is a allowed fasta sequence
+def isSequenceFasta(sequence):
+    return bool(re.match("^[" + allowedFasta + "]+$", sequence))
+
 #checking if file is in fasta format
 def checkFastaFormat(file):
+    #open filestream for given file  and paring into a list
     fileStream = openFileStream("input_files/" + file)
     fileContentAsList = parseFileToList(fileStream)
     fileStream.close()
     inGeneID = False
     inSequence = False
+    #loop through all lines in the list
     for line in fileContentAsList:
+        #ignore comment case
         if not line.startswith(";"):
+            #checking for IDs
             if inGeneID == False and line.startswith(">"):
                 inGeneID = True
                 inSequence = False
+            #checking if line after ID line is not an ID, but a sequence
             elif inGeneID == True and line.startswith(">"):
-                print("ERROR: " + file + "is not in FASTA format, because there where 2 GenIDs in a row")
+                print("ERROR: " + file + " is not in FASTA format, because there where 2 GenIDs in a row")
                 exit(1)
+            #if next line after ID is a sequence
             elif inGeneID == True:
-                if not line.isalpha():
-                    print("ERROR: " + file + "is not in FASTA format, because of this line: " + line)
+                #checking if it is alphabetical
+                if not isSequenceFasta(line):
+                    print("ERROR: " + file + " is not in FASTA format, because of this line: " + line)
                     exit(1)
                 inGeneID = False
                 inSequence = True
+            #if in sequence
             elif inSequence == True:
-                if not line.isalpha():
-                    print("ERROR: " + file + "is not in FASTA format, because of this line: " + line)
+                #checking if it is alphabetical
+                if not isSequenceFasta(line):
+                    print("ERROR: " + file + " is not in FASTA format, because of this line: " + line)
                     exit(1)
+            #if its none of the above print error
             else:
-                print("ERROR: " + file + "is not in FASTA format, because of this line: " + line)
+                print("ERROR: " + file + " is not in FASTA format, because of this line: " + line)
                 exit(1)
 
 # Checks the similarity of two given strings and returns it ratio
@@ -95,6 +115,9 @@ def similarRatio(seq1, seq2):
 
 #Checks the difference of two given strings and returns it
 def similarAbsolute(seq1, seq2):
+    #loops through both sequences at once
+    #and checks if the characters are the same
+    #if not, add 1 to the difference
     return sum(1 for a, b in zip(seq1, seq2) if a != b)
 
 #comparing the fasta files using the queries
@@ -150,17 +173,22 @@ def compareFastasWithQueries(fasta1, fasta2, queries, threshold):
                     #append the original ID and sequence to the fasta output
                     appendToFAOutput(key, fasta2.get(key))
 
+#manages the output lists
 def appendToOutputs(query, key, simdiff):
     #append to fasta
     output_log.append("Changed ID " + key + " to " + query + "\n")
     #append to csv
     output_csv.append(key + "," + query + "," + str(simdiff) + "\n")
 
+#manages the outputlist for the fasta output
 def appendToFAOutput(query, sequence):
     #append query
     output_fa.append(query)
+    #append sequence
     output_fa.append(sequence)
 
+#creates a folder using the given directory,
+#if it does not already exist
 def createFolder(directory):
     try:
         if not os.path.exists(directory):
@@ -168,6 +196,7 @@ def createFolder(directory):
     except OSError:
         print ('ERROR: Creating directory. ' + directory)
 
+#writes all output files
 def writeInOutputs(outputname):
     #check if output and logs folder are there and create it if not
     createFolder("./output/")
@@ -175,10 +204,14 @@ def writeInOutputs(outputname):
     #write the fasta file
     try:
         fo = open("./output/" + outputname.replace(".fa", "") + "_output.fa", "w+")
+        #loop through all lines in the output list for the fasta
         for line in output_fa:
+            #checks if line is a comment or a ID
             if line.startswith(">") or line.startswith(";"):
+                #if yes just write it in
                 fo.write(line + "\n")
             else:
+                #if not break it in parts of length 60
                 n = 60
                 parts = [line[i:i + n] for i in range(0, len(line), n)]
                 for part in parts:
@@ -188,13 +221,17 @@ def writeInOutputs(outputname):
         print("An error occured trying to write to " + outputname)
 
     #write in logfile
+    #timestamp for logfilename
     currentTimestamp = datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d %H-%M-%S')
     try:
         lo = open("./logs/log_" + currentTimestamp + "_" + outputname.replace(".fa", "") + ".txt", "w+")
         lo.write("Program call was:\n")
+        #write program call in log
         lo.write("python " + str(os.path.basename(__file__)) + str(args)[9:] + "\n")
+        #loop through all lines in the output list for log and just write them in
         for element in output_log:
             lo.write(element)
+        #write threshold and new outputfile in log
         lo.write("Chosen threshold was: " + str(args.threshold) + "\n" + "New filename for " + outputname + " is " + outputname.replace(".fa", "") + "_output.fa" + "\n")
         lo.close()
     except IOError:
@@ -203,10 +240,13 @@ def writeInOutputs(outputname):
     #write in csv file
     try:
         co = open("./output/" + outputname.replace(".fa", "") + "_csv.csv", "w+")
+        #write similarity if percentage calculation was used
         if str(args.threshold).endswith("%"):
             co.write("oldID,newID,similarity\n")
+        #write difference of absolute calculation was used
         else:
             co.write("oldID,newID,difference\n")
+        #loop through all lines in the output list for csv and just write them in
         for element in output_csv:
             co.write(element)
         co.close()
@@ -219,6 +259,10 @@ current_milli_time = lambda: int(round(time.time() * 1000))
 #actually doing stuff now
 
 readInArguments();
+
+#making a string with all allowed characters in a fasta sequence
+#wich is every letter of the alphabet except J and O plus you can use * and -
+allowedFasta = "AaBbCcDdEeFfGgHhIiKkLlMmNnPpQqRrSsTtUuVvWwXxYyZz*-"
 
 #checkingFastaFormat for original file
 checkFastaFormat(args.originalfasta)
