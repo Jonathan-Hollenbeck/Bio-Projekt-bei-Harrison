@@ -264,51 +264,59 @@ readInArguments();
 #wich is every letter of the alphabet except J and O plus you can use * and -
 allowedFasta = "AaBbCcDdEeFfGgHhIiKkLlMmNnPpQqRrSsTtUuVvWwXxYyZz*-"
 
-#checkingFastaFormat for original file
+#checking fastaformat for original file
 checkFastaFormat(args.originalfasta)
 
-#reading in the original fasta file
+#reading in the original fasta file and parsing in dictionary
 ogFastaStream = openFileStream("input_files/" + args.originalfasta)
 ogFasta_dict = parseToDict(ogFastaStream)
 ogFastaStream.close()
 
 #handling queries
 
-#putting all genes from original fasta in queries
+#deleting all existing queries and putting all queries from original fasta in queries
 if "all" in args.queries:
     args.queries = []
     for key in ogFasta_dict.keys():
         args.queries.append(key.replace(">",""))
-#if queries.txt was in -q, put all genes from it in queries but no doubles
+#if queries.txt was in -q, put all genes from it in queries with no doubles
 elif "queries.txt" in args.queries:
+    #removing queries.txt from queries
     args.queries.remove("queries.txt")
+    #open file stream to get the queries out of queries.txt
     queriesStream = openFileStream("input_files/queries.txt")
     queries = parseFileToList(queriesStream)
     queriesStream.close()
+    #adding all queries from queries.txt to queries with no doubles
     for query in queries:
         if query not in args.queries:
             args.queries.append(query)
-#put > infront of every query
+#put > infront of every query for easier use later in comparisons
 args.queries = [">" + query for query in args.queries]
 #error message if some queries are not in original file
 for query in args.queries:
     if not query in ogFasta_dict.keys():
         print("ERROR: some or all queries are not in original File!")
         exit(1)
+#if query list is empty throw error
 if not args.queries:
     print("ERROR: query list is empty! maybe check queries.txt.")
     exit(1)
 
-#variable for log output and csv output
+#variable for log output, csv output and fasta output
 output_log = []
 output_csv = []
 output_fa = []
 
+#saving current timestamp for calculating total time needed
 millisAll = current_milli_time()
 
 #looping through all compare fastas
 for fasta in args.comparefastas:
+    #saving current timestamp for calculating time needed for this comparison
     millisFasta = current_milli_time()
+
+    #checking fastaformat for current comparison fasta
     checkFastaFormat(fasta)
 
     #reading in the compare Fasta file
@@ -316,18 +324,23 @@ for fasta in args.comparefastas:
     cpFasta_dict = parseToDict(cpFastaStream)
     cpFastaStream.close()
 
+    #print starting and finish information for user and compare fastas
     print("starting to compare " + args.originalfasta + " and " + fasta + " with threshold " + str(args.threshold) + "...")
     compareFastasWithQueries(ogFasta_dict, cpFasta_dict, args.queries, args.threshold)
     print("comparison between " + args.originalfasta + " and " + fasta + " completed!")
 
+    #print output information for the user
     print("writing output...")
     writeInOutputs(fasta)
     print("finished writing output!\n")
 
+    #reset output lists for next comparison fasta
     output_csv = []
     output_log = []
     output_fa = []
 
+    #print time needed for current fasta
     print("Time needed for this comparision: " + str((current_milli_time() - millisFasta)) + " milliseconds\n")
 
+#print total time needed for all comparisons
 print("Time needed for all comparisions: " + str((current_milli_time() - millisAll)) + " milliseconds")
