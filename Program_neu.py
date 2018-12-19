@@ -100,21 +100,20 @@ def similarAbsolute(seq1, seq2):
 def compareFastasWithQueries(fasta1, fasta2, queries, threshold):
     if str(threshold).endswith("%"):
         threshold = float(threshold.replace("%", ""))
-        percent = True
-    else:
-        threshold = float(threshold)
-        percent = False
-    for query in queries:
-        for key in fasta2.keys():
-            if len(fasta1.get(query)) == len(fasta2.get(key)):
-                if percent == True:
+        for query in queries:
+            for key in fasta2.keys():
+                if len(fasta1.get(query)) == len(fasta2.get(key)):
                     similarity = similarRatio(fasta1.get(query), fasta2.get(key))
                     if similarity*100 >= threshold:
                         appendToOutputs(query, key, str(similarity*100) + "%")
                         appendToFAOutput(query, fasta2.get(key))
                     else:
                         appendToFAOutput(key, fasta2.get(key))
-                else:
+    else:
+        threshold = float(threshold)
+        for query in queries:
+            for key in fasta2.keys():
+                if len(fasta1.get(query)) == len(fasta2.get(key)):
                     difference = similarAbsolute(fasta1.get(query), fasta2.get(key))
                     if difference <= threshold:
                         appendToOutputs(query, key, difference)
