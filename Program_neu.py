@@ -169,7 +169,8 @@ def appendToOutputs(query, geneID, simdiff):
     alreadyKey = ""
     #loop though all keys in the idChangeMemory
     for key in idChangeMemory.keys():
-        #if the geneID was changed by another query set alreadyChanged True
+        #if the geneID was changed by another query set alreadyChanged = True
+        #and alreadyKey = the key that already did it
         if geneID in idChangeMemory.get(key) and not key == query:
             alreadyChanged = True
             alreadyKey = key
