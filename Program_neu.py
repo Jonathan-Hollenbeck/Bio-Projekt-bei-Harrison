@@ -122,6 +122,10 @@ def similarAbsolute(seq1, seq2):
 
 #comparing the fasta files using the queries
 def compareFastasWithQueries(fasta1, fasta2, queries, threshold):
+    #filling output_fa with the content of the compare fasta
+    for key in fasta2.keys():
+        output_fa.append(key)
+        output_fa.append(fasta2.get(key))
     #comparing via percentage
     if str(threshold).endswith("%"):
         #parsing threshold to float and without % sign
@@ -136,17 +140,10 @@ def compareFastasWithQueries(fasta1, fasta2, queries, threshold):
                     #checking if threshold was exceeded
                     if similarity*100 >= threshold:
                         #if was exceeded
+                        #change the ID in the fasta output
+                        changeIDInFastaOutput(query, key)
                         #append the renamed ID with the sequence to all the outputs
                         appendToOutputs(query, key, str(similarity*100) + "%")
-                        appendToFAOutput(query, fasta2.get(key))
-                    else:
-                        #if not
-                        #append the original ID and sequence to all the output
-                        appendToFAOutput(key, fasta2.get(key))
-                else:
-                    #if sequence was not equaly long
-                    #append the original ID and sequence to the fasta output
-                    appendToFAOutput(key, fasta2.get(key))
     #comparing via absolute value
     else:
         #parsing the threshold to a float
@@ -161,31 +158,59 @@ def compareFastasWithQueries(fasta1, fasta2, queries, threshold):
                     #checking if threshold was exceeded
                     if difference <= threshold:
                         #if not
+                        #change the ID in the fasta output
+                        changeIDInFastaOutput(query, key)
                         #append the renamed ID with the sequence to all the outputs
                         appendToOutputs(query, key, difference)
-                        appendToFAOutput(query, fasta2.get(key))
-                    else:
-                        #if was exceeded
-                        #append the original ID and sequence to all the output
-                        appendToFAOutput(key, fasta2.get(key))
-                else:
-                    #if sequence was not equaly long
-                    #append the original ID and sequence to the fasta output
-                    appendToFAOutput(key, fasta2.get(key))
 
 #manages the output lists
-def appendToOutputs(query, key, simdiff):
-    #append to fasta
-    output_log.append("Changed ID " + key + " to " + query + "\n")
+def appendToOutputs(query, geneID, simdiff):
+    alreadyChanged = False
+    alreadyKey = ""
+    #loop though all keys in the idChangeMemory
+    for key in idChangeMemory.keys():
+        #if the geneID was changed by another query set alreadyChanged True
+        if geneID in idChangeMemory.get(key) and not key == query:
+            alreadyChanged = True
+            alreadyKey = key
+            break
+    #append to log
+    if alreadyChanged == False:
+        output_log.append("Changed ID " + geneID + " to " + query + "\n")
+    else:
+        output_log.append("Wanting to change ID " + geneID + " to " + query + " but " + alreadyKey + " already did it.\n")
     #append to csv
-    output_csv.append(key + "," + query + "," + str(simdiff) + "\n")
+    output_csv.append(geneID + "," + query + "," + str(simdiff) + "\n")
 
 #manages the outputlist for the fasta output
-def appendToFAOutput(query, sequence):
-    #append query
-    output_fa.append(query)
-    #append sequence
-    output_fa.append(sequence)
+def changeIDInFastaOutput(query, geneID):
+    #change the geneID in output fasta, if it didnt get changed by any other query
+    alreadyChanged = False
+    #loop though all keys in the idChangeMemory
+    for key in idChangeMemory.keys():
+        #if the geneID was changed by another query set alreadyChanged True
+        if geneID in idChangeMemory.get(key):
+            alreadyChanged = True
+    #if geneID wasnt changed by another query, rename it to query
+    if alreadyChanged == False:
+        id = getIDOfValueInList(geneID, output_fa)
+        #if id is -1 geneID is not in the fasta output
+        if not id == -1:
+            output_fa[id] = query
+
+    #if query already replaced some geneIDs, append the current to his list
+    if query in idChangeMemory.keys():
+        idChangeMemory[query].append(geneID)
+    else:
+        #if not, create a new one with the current geneID inside
+        idChangeMemory[query] = [geneID]
+
+#get the id of value inside a list
+def getIDOfValueInList(value, list):
+    for i in range(len(list)):
+        if list[i] == value:
+            return i
+    return -1
 
 #creates a folder using the given directory,
 #if it does not already exist
@@ -242,10 +267,10 @@ def writeInOutputs(outputname):
         co = open("./output/" + outputname.replace(".fa", "") + "_csv.csv", "w+")
         #write similarity if percentage calculation was used
         if str(args.threshold).endswith("%"):
-            co.write("oldID,newID,similarity\n")
+            co.write("compareID,query,similarity\n")
         #write difference of absolute calculation was used
         else:
-            co.write("oldID,newID,difference\n")
+            co.write("compareID,query,difference\n")
         #loop through all lines in the output list for csv and just write them in
         for element in output_csv:
             co.write(element)
@@ -326,6 +351,9 @@ output_log = []
 output_csv = []
 output_fa = []
 
+#variable to memorise, what id already got change by what query
+idChangeMemory = {}
+
 #saving current timestamp for calculating total time needed
 millisAll = current_milli_time()
 
@@ -352,10 +380,11 @@ for fasta in args.comparefastas:
     writeInOutputs(fasta)
     print("finished writing output!\n")
 
-    #reset output lists for next comparison fasta
+    #reset global variables for next comparison fasta
     output_csv = []
     output_log = []
     output_fa = []
+    idChangeMemory = {}
 
     #print time needed for current fasta
     print("Time needed for this comparision: " + str((current_milli_time() - millisFasta)) + " milliseconds\n")
