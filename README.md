@@ -98,7 +98,7 @@ The logfile contains the whole program call with all parameters, every ID change
 and the new fasta filename with the renamed sequences.
 If two different queries matched with the same sequence, the first one will replace the ID. This will also be mentioned in the log file.
 
-Inside the output folder you will find a file for each compared fasta file named with the old fasta filename and an appended _output.fa.
-Additionally there is a corresponding _csv.csv with the query and compareID and their similarity or difference, depending on the method used.
+Inside the output folder you will find a file for each compared fasta file named with the old fasta filename and an appended \_output.fa.
+Additionally there is a corresponding \_csv.csv with the query and compareID and their similarity or difference, depending on the method used.
 
 Furthermore there is an errorlog.txt in the main folder in which all errors will be logged with a timestamp.
