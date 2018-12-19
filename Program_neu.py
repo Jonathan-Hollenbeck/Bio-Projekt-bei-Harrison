@@ -31,7 +31,7 @@ def openFileStream(file):
     try:
         return open(file, "r")
     except IOError:
-        print("ERROR: An error occured trying to read " + file)
+        writeInErrorLog("ERROR: An error occured trying to read " + file)
         exit(1)
 
 #parsing the content of a file into a list
@@ -88,13 +88,13 @@ def checkFastaFormat(file):
                 inSequence = False
             #checking if line after ID line is not an ID, but a sequence
             elif inGeneID == True and line.startswith(">"):
-                print("ERROR: " + file + " is not in FASTA format, because there where 2 GenIDs in a row")
+                writeInErrorLog("ERROR: " + file + " is not in FASTA format, because there where 2 GenIDs in a row")
                 exit(1)
             #if next line after ID is a sequence
             elif inGeneID == True:
                 #checking if it is alphabetical
                 if not isSequenceFasta(line):
-                    print("ERROR: " + file + " is not in FASTA format, because of this line: " + line)
+                    writeInErrorLog("ERROR: " + file + " is not in FASTA format, because of this line: " + line)
                     exit(1)
                 inGeneID = False
                 inSequence = True
@@ -102,11 +102,11 @@ def checkFastaFormat(file):
             elif inSequence == True:
                 #checking if it is alphabetical
                 if not isSequenceFasta(line):
-                    print("ERROR: " + file + " is not in FASTA format, because of this line: " + line)
+                    writeInErrorLog("ERROR: " + file + " is not in FASTA format, because of this line: " + line)
                     exit(1)
             #if its none of the above print error
             else:
-                print("ERROR: " + file + " is not in FASTA format, because of this line: " + line)
+                writeInErrorLog("ERROR: " + file + " is not in FASTA format, because of this line: " + line)
                 exit(1)
 
 # Checks the similarity of two given strings and returns it ratio
@@ -218,7 +218,7 @@ def writeInOutputs(outputname):
                     fo.write(part + "\n")
         fo.close()
     except IOError:
-        print("An error occured trying to write to " + outputname)
+        writeInErrorLog("ERROR: An error occured trying to write to " + outputname)
 
     #write in logfile
     #timestamp for logfilename
@@ -235,7 +235,7 @@ def writeInOutputs(outputname):
         lo.write("Chosen threshold was: " + str(args.threshold) + "\n" + "New filename for " + outputname + " is " + outputname.replace(".fa", "") + "_output.fa" + "\n")
         lo.close()
     except IOError:
-        print("An error occured trying to append to log_" + currentTimestamp + ".txt")
+        writeInErrorLog("ERROR: An error occured trying to append to log_" + currentTimestamp + ".txt")
 
     #write in csv file
     try:
@@ -251,7 +251,25 @@ def writeInOutputs(outputname):
             co.write(element)
         co.close()
     except IOError:
-        print("An error occured trying to append to ./output/" + outputname.replace(".fa", "") + "_csv.csv")
+        writeInErrorLog("ERROR: An error occured trying to append to ./output/" + outputname.replace(".fa", "") + "_csv.csv")
+
+#write in in errorlog
+def writeInErrorLog(error):
+    #printing error for the user
+    print(error)
+    #maiking timestamp to identify error
+    currentTimestamp = datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d %H-%M-%S')
+    try:
+        eo = open("./errorlog.txt", "a+")
+        #write errormessage in errorlog.txt
+        eo.write("Time of Error: " + currentTimestamp + "\n")
+        eo.write("Program call was:\n")
+        eo.write("python " + str(os.path.basename(__file__)) + str(args)[9:] + "\n")
+        eo.write(error + "\n\n")
+        eo.close()
+    except IOError:
+        print("ERROR: An error occured trying to append to errorlog.txt!\n")
+        print("THIS SHOULD NOT HAPPEN!\nMaybe you have the errorlog.txt open and the program cant acces it!")
 
 #current time in milliseconds
 current_milli_time = lambda: int(round(time.time() * 1000))
@@ -296,11 +314,11 @@ args.queries = [">" + query for query in args.queries]
 #error message if some queries are not in original file
 for query in args.queries:
     if not query in ogFasta_dict.keys():
-        print("ERROR: some or all queries are not in original File!")
+        writeInErrorLog("ERROR: some or all queries are not in original File! Maybe check queries.txt.")
         exit(1)
 #if query list is empty throw error
 if not args.queries:
-    print("ERROR: query list is empty! maybe check queries.txt.")
+    writeInErrorLog("ERROR: query list is empty! Maybe check queries.txt.")
     exit(1)
 
 #variable for log output, csv output and fasta output

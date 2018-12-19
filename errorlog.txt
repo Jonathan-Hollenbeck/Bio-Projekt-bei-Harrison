@@ -1,0 +1,5 @@
+Time of Error: 2018-12-19 11-49-54
+Program call was:
+python Program_neu.py(comparefastas=['hsapiens_long.fa'], originalfasta='chimpanzee_1_one_mistake.fa', queries=['>human_gene_1', '>human_gene_2'], threshold='5%')
+ERROR: some or all queries are not in original File!
+
