@@ -1,0 +1,5 @@
+Time of Error: 2018-12-20 13-12-47
+Program call was:
+python idrename.py(comparefastas=['hsapiens_long.fa', 'chimpanzee_2.fa'], originalfasta='human_query.fa', queries=['>kakapupu'], threshold='5')
+ERROR: some or all queries are not in original File! Maybe check queries.txt.
+
